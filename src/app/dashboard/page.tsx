@@ -36,6 +36,13 @@ export default function DashboardPage() {
           </Link>
         </div>
       )}
+
+    <div className="flex gap-4 mb-6">
+      <Link href="/dashboard/scores">
+        <Button variant="outline">My Scores</Button>
+      </Link>
     </div>
+    </div>
+    
   );
 }
