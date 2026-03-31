@@ -12,7 +12,13 @@ export async function GET() {
 
   const { data, error } = await supabaseServer
     .from("users")
-    .select("is_subscribed, plan")
+    .select(`
+      is_subscribed, 
+      plan,
+      charity_id,
+      charity_percentage,
+      charities(name)
+    `)
     .eq("clerk_id", userId)
     .single();
 
@@ -21,5 +27,11 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  // Flatten the charity name
+  const responseData = {
+    ...data,
+    charity_name: (data as any).charities?.name || null,
+  };
+
+  return NextResponse.json(responseData);
 }

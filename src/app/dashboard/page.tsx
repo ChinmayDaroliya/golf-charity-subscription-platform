@@ -4,45 +4,179 @@ import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+interface UserData {
+  id: string;
+  is_subscribed: boolean;
+  plan: string | null;
+  charity_id: string | null;
+  charity_name: string | null;
+  charity_percentage: number | null;
+}
+
+interface Charity {
+  id: string;
+  name: string;
+}
 
 export default function DashboardPage() {
-  const { isLoaded, isSignedIn, user } = useUser();
-  const [subscription, setSubscription] = useState<{
-    is_subscribed: boolean;
-    plan: string | null;
-  } | null>(null);
+  const { isLoaded, isSignedIn } = useUser();
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [charities, setCharities] = useState<Charity[]>([]);
+  const [newCharityId, setNewCharityId] = useState("");
+  const [newPercentage, setNewPercentage] = useState(10);
+  const [updating, setUpdating] = useState(false);
+  const [scoresCount, setScoresCount] = useState(0);
+  const [winnings, setWinnings] = useState<{ total: number }>({ total: 0 });
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
       fetch("/api/user/status")
         .then((res) => res.json())
-        .then(setSubscription);
+        .then(setUserData);
+
+      fetch("/api/charities")
+        .then((res) => res.json())
+        .then(setCharities);
+
+      fetch("/api/scores")
+        .then((res) => res.json())
+        .then((scores) => setScoresCount(scores.length));
+
+      fetch("/api/user/winnings")
+        .then((res) => res.json())
+        .then(setWinnings);
     }
   }, [isLoaded, isSignedIn]);
 
-  if (!isLoaded) return <div>Loading...</div>;
-  if (!isSignedIn) return null;
+  const handleUpdateCharity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userData?.is_subscribed) {
+      alert("You need to be subscribed to set a charity.");
+      return;
+    }
+    setUpdating(true);
+    const res = await fetch("/api/user/update-charity", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        charity_id: newCharityId,
+        charity_percentage: newPercentage,
+      }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setUserData((prev) => ({ ...prev!, ...updated }));
+      alert("Charity updated!");
+    } else {
+      alert("Failed to update charity.");
+    }
+    setUpdating(false);
+  };
+
+  if (!isLoaded || !isSignedIn) return <div>Loading...</div>;
 
   return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      {subscription?.is_subscribed ? (
-        <p>You are subscribed ({subscription.plan}). Thank you for supporting charity!</p>
-      ) : (
-        <div>
-          <p>You are not subscribed. Subscribe to participate in draws and support charities.</p>
-          <Link href="/dashboard/subscribe">
-            <Button className="mt-4">Subscribe Now</Button>
-          </Link>
-        </div>
+    <div className="container mx-auto p-8 space-y-8">
+      <h1 className="text-3xl font-bold">Dashboard</h1>
+
+      {/* Subscription status */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Subscription</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {userData?.is_subscribed ? (
+            <div>
+              <p>Active plan: {userData.plan}</p>
+              <p>Charity: {userData.charity_name || "None"} ({userData.charity_percentage}%)</p>
+              <Button asChild variant="outline" className="mt-2">
+                <Link href="/dashboard/scores">Manage Scores</Link>
+              </Button>
+            </div>
+          ) : (
+            <div>
+              <p>Not subscribed. <Link href="/dashboard/subscribe" className="text-blue-600 underline">Subscribe now</Link> to participate.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Score participation status */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Participation</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {userData?.is_subscribed ? (
+            scoresCount === 5 ? (
+              <p className="text-green-600">You have 5 scores – eligible for the next draw!</p>
+            ) : (
+              <p className="text-yellow-600">You have {scoresCount}/5 scores. Add more to be eligible.</p>
+            )
+          ) : (
+            <p>Subscribe to start adding scores.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Change charity (if subscribed) */}
+      {userData?.is_subscribed && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Change Charity / Percentage</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleUpdateCharity} className="space-y-4">
+              <div>
+                <Label>Charity</Label>
+                <Select onValueChange={setNewCharityId} value={newCharityId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select charity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {charities.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Percentage (min 10)</Label>
+                <Input
+                  type="number"
+                  min={10}
+                  max={100}
+                  value={newPercentage}
+                  onChange={(e) => setNewPercentage(Number(e.target.value))}
+                />
+              </div>
+              <Button type="submit" disabled={updating}>
+                Update Charity
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
-    <div className="flex gap-4 mb-6">
-      <Link href="/dashboard/scores">
-        <Button variant="outline">My Scores</Button>
-      </Link>
+      {/* Winnings */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Winnings</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-2xl font-bold">${winnings.total.toFixed(2)}</p>
+          <Button asChild variant="link" className="mt-2">
+            <Link href="/dashboard/winnings">View details</Link>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
-    </div>
-    
   );
 }
