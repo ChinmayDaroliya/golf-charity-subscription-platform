@@ -1,10 +1,20 @@
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
+'use client'
 
-export default async function DashboardPage() {
-  const { userId } = await auth();
+import { useUser } from "@clerk/nextjs";
+import { useEffect } from "react";
 
-  if (!userId) redirect("/sign-in");
+export default function DashboardPage() {
+  const { isLoaded, isSignedIn, user } = useUser();
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn && user?.primaryEmailAddress?.emailAddress) {
+      fetch("/api/user/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.primaryEmailAddress.emailAddress }),
+      });
+    }
+  }, [isLoaded, isSignedIn, user]);
 
   return (
     <div className="container mx-auto p-8">
