@@ -5,7 +5,9 @@ import { NextResponse } from "next/server";
 // GET /api/scores – returns user's scores sorted newest first
 export async function GET() {
   const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const { data: user, error: userError } = await supabaseServer
     .from("users")
@@ -13,7 +15,10 @@ export async function GET() {
     .eq("clerk_id", userId)
     .single();
 
-  if (userError || !user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (userError || !user) {
+    // Return empty array if user not found
+    return NextResponse.json([]);
+  }
 
   const { data, error } = await supabaseServer
     .from("scores")
@@ -22,8 +27,12 @@ export async function GET() {
     .order("created_at", { ascending: false })
     .limit(5);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  if (error) {
+    console.error("Error fetching scores:", error);
+    return NextResponse.json([]);
+  }
+  
+  return NextResponse.json(data || []);
 }
 
 // POST /api/scores – add a new score, enforce max 5

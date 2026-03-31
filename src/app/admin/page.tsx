@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { SignOutButton } from "@clerk/nextjs";
 
 export default function AdminDashboard() {
   return (
     <div className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-6">Admin Panel</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Admin Panel</h1>
+        <SignOutButton>
+          <Button variant="outline">Sign Out</Button>
+        </SignOutButton>
+      </div>
       <div className="space-x-4">
         <Link href="/admin/users">
           <Button>View Users</Button>

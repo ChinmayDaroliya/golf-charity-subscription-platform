@@ -1,13 +1,20 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
+import { SignOutButton } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface UserData {
   id: string;
@@ -23,35 +30,53 @@ interface Charity {
   name: string;
 }
 
+interface WinningsData {
+  total: number;
+}
+
 export default function DashboardPage() {
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [charities, setCharities] = useState<Charity[]>([]);
   const [newCharityId, setNewCharityId] = useState("");
   const [newPercentage, setNewPercentage] = useState(10);
   const [updating, setUpdating] = useState(false);
   const [scoresCount, setScoresCount] = useState(0);
-  const [winnings, setWinnings] = useState<{ total: number }>({ total: 0 });
+  const [winnings, setWinnings] = useState<WinningsData>({ total: 0 });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      fetch("/api/user/status")
-        .then((res) => res.json())
-        .then(setUserData);
-
-      fetch("/api/charities")
-        .then((res) => res.json())
-        .then(setCharities);
-
-      fetch("/api/scores")
-        .then((res) => res.json())
-        .then((scores) => setScoresCount(scores.length));
-
-      fetch("/api/user/winnings")
-        .then((res) => res.json())
-        .then(setWinnings);
+    if (isLoaded && isSignedIn && user?.primaryEmailAddress?.emailAddress) {
+      setLoading(true);
+      console.log("Calling sync API");
+      fetch("/api/user/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.primaryEmailAddress.emailAddress }),
+      }).then(res => {
+        console.log("Sync API response:", res.status);
+        return res.json();
+      }).then(data => {
+        console.log("Sync data:", data);
+        // Then fetch status and other data
+        return Promise.all([
+          fetch("/api/user/status").then(res => res.json()),
+          fetch("/api/charities").then(res => res.json()),
+          fetch("/api/scores").then(res => res.json()),
+          fetch("/api/user/winnings").then(res => res.json()),
+        ]);
+      }).then(([userStatus, charitiesData, scoresData, winningsData]) => {
+        setUserData(userStatus);
+        setCharities(charitiesData);
+        setScoresCount(scoresData.length);
+        setWinnings(winningsData);
+      }).catch(error => {
+        console.error("Error fetching dashboard data:", error);
+      }).finally(() => {
+        setLoading(false);
+      });
     }
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, user]);
 
   const handleUpdateCharity = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,11 +103,22 @@ export default function DashboardPage() {
     setUpdating(false);
   };
 
-  if (!isLoaded || !isSignedIn) return <div>Loading...</div>;
+  if (!isLoaded || !isSignedIn) {
+    return <div className="container mx-auto p-8">Loading...</div>;
+  }
+
+  if (loading) {
+    return <div className="container mx-auto p-8">Loading dashboard...</div>;
+  }
 
   return (
     <div className="container mx-auto p-8 space-y-8">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <SignOutButton>
+          <Button variant="outline">Sign Out</Button>
+        </SignOutButton>
+      </div>
 
       {/* Subscription status */}
       <Card>
@@ -92,8 +128,8 @@ export default function DashboardPage() {
         <CardContent>
           {userData?.is_subscribed ? (
             <div>
-              <p>Active plan: {userData.plan}</p>
-              <p>Charity: {userData.charity_name || "None"} ({userData.charity_percentage}%)</p>
+              <p>Active plan: {userData.plan === 'monthly' ? 'Monthly' : 'Yearly'}</p>
+              <p>Charity: {userData.charity_name || "None"} ({userData.charity_percentage || 0}%)</p>
               <Button asChild variant="outline" className="mt-2">
                 <Link href="/dashboard/scores">Manage Scores</Link>
               </Button>
@@ -114,9 +150,9 @@ export default function DashboardPage() {
         <CardContent>
           {userData?.is_subscribed ? (
             scoresCount === 5 ? (
-              <p className="text-green-600">You have 5 scores – eligible for the next draw!</p>
+              <p className="text-green-600">✅ You have 5 scores – eligible for the next draw!</p>
             ) : (
-              <p className="text-yellow-600">You have {scoresCount}/5 scores. Add more to be eligible.</p>
+              <p className="text-yellow-600">⚠️ You have {scoresCount}/5 scores. Add more to be eligible.</p>
             )
           ) : (
             <p>Subscribe to start adding scores.</p>
@@ -158,7 +194,7 @@ export default function DashboardPage() {
                 />
               </div>
               <Button type="submit" disabled={updating}>
-                Update Charity
+                {updating ? "Updating..." : "Update Charity"}
               </Button>
             </form>
           </CardContent>
@@ -171,7 +207,9 @@ export default function DashboardPage() {
           <CardTitle>Winnings</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-bold">${winnings.total.toFixed(2)}</p>
+          <p className="text-2xl font-bold">
+            ${winnings?.total?.toFixed(2) || "0.00"}
+          </p>
           <Button asChild variant="link" className="mt-2">
             <Link href="/dashboard/winnings">View details</Link>
           </Button>

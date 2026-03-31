@@ -41,21 +41,30 @@ export default function SubscribePage() {
       .then((data) => setCharities(data));
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const res = await fetch("/api/subscribe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan, charity_id: charityId, charity_percentage: percentage }),
-    });
-    if (res.ok) {
-      router.push("/dashboard");
-    } else {
-      alert("Subscription failed");
-    }
-    setLoading(false);
-  };
+  
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setLoading(true);
+
+  const res = await fetch("/api/create-checkout-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ 
+      plan, 
+      charity_id: charityId, 
+      charity_percentage: percentage 
+    }),
+  });
+
+  if (res.ok) {
+    const { sessionId, url } = await res.json();
+    router.push(url);
+  } else {
+    alert("Failed to create checkout session");
+  }
+
+  setLoading(false);
+};
 
   return (
     <div className="container mx-auto max-w-2xl py-12">
