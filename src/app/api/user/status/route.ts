@@ -12,7 +12,7 @@ export async function GET() {
     const { data, error } = await supabaseServer
       .from("users")
       .select(
-        "id, is_subscribed, plan, charity_id, charity_percentage"
+        "id, is_subscribed, plan, charity_id, charity_percentage, is_admin"
       )
       .eq("clerk_id", userId)
       .single();
@@ -27,6 +27,7 @@ export async function GET() {
           charity_id: null,
           charity_percentage: null,
           charity_name: null,
+          is_admin: false,
         });
       }
       console.error("Error fetching user status:", error);
@@ -51,6 +52,7 @@ export async function GET() {
       charity_id: data.charity_id,
       charity_percentage: data.charity_percentage,
       charity_name,
+      is_admin: data.is_admin,
     };
 
     return NextResponse.json(userData);

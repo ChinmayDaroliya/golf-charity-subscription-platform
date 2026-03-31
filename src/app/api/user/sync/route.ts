@@ -34,5 +34,13 @@ export async function POST() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Auto-subscribe admin users
+  if (data.is_admin) {
+    await supabaseServer
+      .from("users")
+      .update({ is_subscribed: true })
+      .eq("id", data.id);
+  }
+
   return NextResponse.json(data);
 }
