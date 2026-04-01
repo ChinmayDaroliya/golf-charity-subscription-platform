@@ -63,7 +63,7 @@ export default function SubscribePage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/user/subscribe", {
+      const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan, charity_id: charityId, charity_percentage: percentage }),
