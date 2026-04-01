@@ -63,17 +63,16 @@ export default function SubscribePage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/subscribe", {
+      const res = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan, charity_id: charityId, charity_percentage: percentage }),
       });
+      const data = await res.json();
       if (res.ok) {
-        toast.success("Subscription activated! You can now add scores and participate.");
-        router.push("/dashboard");
+        router.push(data.url);
       } else {
-        const err = await res.json();
-        toast.error(err.error || "Failed to subscribe.");
+        toast.error(data.error || "Failed to create checkout session.");
       }
     } catch (error) {
       toast.error("Something went wrong. Please try again.");
