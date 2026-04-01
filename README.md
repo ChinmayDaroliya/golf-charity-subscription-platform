@@ -1,5 +1,9 @@
 # 🚀 Golf Charity Subscription Platform
 
+## 🔑 Admin Credentials
+- **Email:** admin@gmail.com
+- **Password:** nimda0978
+
 [![Deployment Status](https://img.shields.io/badge/Deployed_on-Vercel-black?logo=vercel)](https://golf-charity-subscription-platform-jet.vercel.app/)
 [![Next.js](https://img.shields.io/badge/Next.js-App_Router-black?logo=next.js)](https://nextjs.org/)
 [![Database](https://img.shields.io/badge/Database-Supabase-green?logo=supabase)](https://supabase.com/)

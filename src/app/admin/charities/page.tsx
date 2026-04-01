@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, Plus, Trash2, Loader2 } from "lucide-react";
+import { Heart, Plus, Trash2, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface Charity {
   id: string;
@@ -29,6 +30,7 @@ interface Charity {
 }
 
 export default function AdminCharitiesPage() {
+  const router = useRouter();
   const [charities, setCharities] = useState<Charity[]>([]);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -114,6 +116,14 @@ export default function AdminCharitiesPage() {
           transition={{ duration: 0.5 }}
           className="mb-8"
         >
+          <Button
+            variant="ghost"
+            className="mb-6 text-muted-foreground hover:text-emerald-600"
+            onClick={() => router.push('/admin')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Admin Dashboard
+          </Button>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent flex items-center gap-2">
             <Heart className="h-8 w-8 text-emerald-600" />
             Manage Charities

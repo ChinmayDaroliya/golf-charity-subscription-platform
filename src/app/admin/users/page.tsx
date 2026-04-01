@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Users, Search, Loader2 } from "lucide-react";
+import { Users, Search, Loader2, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface User {
   id: string;
@@ -19,6 +21,7 @@ interface User {
 }
 
 export default function AdminUsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -62,6 +65,14 @@ export default function AdminUsersPage() {
           transition={{ duration: 0.5 }}
           className="mb-8"
         >
+          <Button
+            variant="ghost"
+            className="mb-6 text-muted-foreground hover:text-emerald-600"
+            onClick={() => router.push('/admin')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Admin Dashboard
+          </Button>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent flex items-center gap-2">
             <Users className="h-8 w-8 text-emerald-600" />
             User Management

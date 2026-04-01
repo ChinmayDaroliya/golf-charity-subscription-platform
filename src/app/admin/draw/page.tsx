@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Dice6, Loader2, Trophy, Users, Award } from "lucide-react";
+import { Dice6, Loader2, Trophy, Users, Award, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface DrawResult {
   drawNumbers: number[];
@@ -24,6 +25,7 @@ interface DrawResult {
 }
 
 export default function DrawPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<DrawResult | null>(null);
 
@@ -61,6 +63,14 @@ export default function DrawPage() {
           transition={{ duration: 0.5 }}
           className="mb-8"
         >
+          <Button
+            variant="ghost"
+            className="mb-6 text-muted-foreground hover:text-emerald-600"
+            onClick={() => router.push('/admin')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Admin Dashboard
+          </Button>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent flex items-center gap-2">
             <Dice6 className="h-8 w-8 text-emerald-600" />
             Monthly Draw
